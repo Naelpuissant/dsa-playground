@@ -44,28 +44,42 @@ func BenchmarkHuanduSkiplistInsert(b *testing.B) {
 
 func BenchmarkSkiplistSearch(b *testing.B) {
 	list := sl.NewSkiplist()
+	exepectedList := skiplist.New(skiplist.Int)
 
-	i := 0
-	for i < b.N {
+	len := 10000
+	rands := []int{}
+
+	for i := range len {
 		list.Insert(i, i)
-		i++
+		exepectedList.Set(i, i)
+		rands = append(rands, rand.Intn(len-1))
 	}
 
+	res := map[int]int{}
 	for b.Loop() {
-		list.Search(rand.Intn(i))
+		node := list.Search(rands[b.N])
+		res[rands[b.N]] = node.Value
+	}
+
+	for key, value := range res {
+		expectedValue, _ := exepectedList.GetValue(key)
+		if value != expectedValue {
+			b.Fatalf("Incorect value %d for key %d, value should be %d", value, key, expectedValue)
+		}
 	}
 }
 
 func BenchmarkHuanduSkiplistSearch(b *testing.B) {
 	list := skiplist.New(skiplist.Int)
 
-	i := 0
-	for i < b.N {
+	len := 10000
+	rands := []int{}
+	for i := range len {
 		list.Set(i, i)
-		i++
+		rands = append(rands, rand.Intn(len-1))
 	}
 
 	for b.Loop() {
-		list.Get(rand.Intn(i))
+		list.Get(rands[b.N])
 	}
 }

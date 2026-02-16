@@ -28,16 +28,21 @@ func NewNode(Key, Value, height int) *Node {
 }
 
 type Skiplist struct {
-	head  *Node
-	level int // current highest level
+	head   *Node
+	level  int // current highest level
+	length int
+
+	update []*Node // Store and reuse update node links
 }
 
 func NewSkiplist() *Skiplist {
 	// head node with max height
 	head := NewNode(-1, 0, maxHeight+1)
+	update := make([]*Node, maxHeight+1)
 	return &Skiplist{
-		head:  head,
-		level: 0,
+		head:   head,
+		level:  0,
+		update: update,
 	}
 }
 
@@ -51,14 +56,13 @@ func (l *Skiplist) rHeight() int {
 
 func (l *Skiplist) Insert(key, value int) {
 	// reach insert point
-	update := make([]*Node, maxHeight+1)
 	curr := l.head
 
 	for i := maxHeight; i >= 0; i-- {
 		for curr.levels[i] != nil && curr.levels[i].Key < key {
 			curr = curr.levels[i]
 		}
-		update[i] = curr
+		l.update[i] = curr
 	}
 	curr = curr.levels[0]
 
@@ -69,7 +73,7 @@ func (l *Skiplist) Insert(key, value int) {
 		// update current level
 		if rHeight > l.level {
 			for i := l.level + 1; i <= rHeight; i++ {
-				update[i] = l.head
+				l.update[i] = l.head
 			}
 			l.level = rHeight
 		}
@@ -77,9 +81,10 @@ func (l *Skiplist) Insert(key, value int) {
 		// insert new node and update levels
 		newNode := NewNode(key, value, rHeight)
 		for i := range rHeight + 1 {
-			newNode.levels[i] = update[i].levels[i]
-			update[i].levels[i] = newNode
+			newNode.levels[i] = l.update[i].levels[i]
+			l.update[i].levels[i] = newNode
 		}
+		l.length++
 	}
 }
 
