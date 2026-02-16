@@ -1,20 +1,30 @@
 package sl
 
 import (
-	"math"
 	"math/rand/v2"
 )
 
 var (
-	maxHeight = 4
-	pValue    = 1 / math.E // Saw that somewhere, might be a good choice
+	// 	maxHeight = 48
+	// 	pValue    = 1 / math.E // Saw that somewhere, might be a good choice
+	maxHeight = 32
+	pValue    = 0.5
 )
 
 type Node struct {
 	Key    int
 	Value  int
 	height int
-	levels [5]*Node
+	levels []*Node
+}
+
+func NewNode(Key, Value, height int) *Node {
+	return &Node{
+		Key:    Key,
+		Value:  Value,
+		height: height,
+		levels: make([]*Node, height+1),
+	}
 }
 
 type Skiplist struct {
@@ -24,7 +34,7 @@ type Skiplist struct {
 
 func NewSkiplist() *Skiplist {
 	// head node with max height
-	head := &Node{Key: -1, height: maxHeight}
+	head := NewNode(-1, 0, maxHeight+1)
 	return &Skiplist{
 		head:  head,
 		level: 0,
@@ -41,7 +51,7 @@ func (l *Skiplist) rHeight() int {
 
 func (l *Skiplist) Insert(key, value int) {
 	// reach insert point
-	update := [5]*Node{}
+	update := make([]*Node, maxHeight+1)
 	curr := l.head
 
 	for i := maxHeight; i >= 0; i-- {
@@ -65,17 +75,27 @@ func (l *Skiplist) Insert(key, value int) {
 		}
 
 		// insert new node and update levels
-		newNode := Node{Key: key, Value: value, height: rHeight}
+		newNode := NewNode(key, value, rHeight)
 		for i := range rHeight + 1 {
 			newNode.levels[i] = update[i].levels[i]
-			update[i].levels[i] = &newNode
+			update[i].levels[i] = newNode
 		}
 	}
 }
 
-// func (l *Skiplist) Find(key int) *Node {
-
-// }
+func (l *Skiplist) Search(key int) *Node {
+	curr := l.head
+	for i := l.level; i >= 0; i-- {
+		for curr.levels[i] != nil && curr.levels[i].Key < key {
+			curr = curr.levels[i]
+		}
+	}
+	curr = curr.levels[0]
+	if curr != nil && curr.Key == key {
+		return curr
+	}
+	return nil
+}
 
 func (l *Skiplist) Keys() []int {
 	res := []int{}
