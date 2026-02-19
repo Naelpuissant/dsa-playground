@@ -1,7 +1,9 @@
 # SkipList
 
 Basicaly an ordered linked list with "shortcuts" called "levels". 
+
 If height of each nodes is 0, it's an oredered linked list.
+
 Thread-safe, mutex locking.
 
 ## Bench
