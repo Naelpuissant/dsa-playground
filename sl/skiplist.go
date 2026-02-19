@@ -66,7 +66,12 @@ func (l *Skiplist) Insert(key, value int) {
 	}
 	curr = curr.levels[0]
 
-	// TODO : handle update value case
+	// if key exists, update value
+	if curr != nil && curr.Key == key {
+		curr.Value = value
+		return
+	}
+
 	if curr == nil || curr.Key != key {
 		rHeight := l.rHeight()
 
@@ -96,9 +101,11 @@ func (l *Skiplist) Search(key int) *Node {
 		}
 	}
 	curr = curr.levels[0]
+
 	if curr != nil && curr.Key == key {
 		return curr
 	}
+
 	return nil
 }
 
@@ -111,4 +118,8 @@ func (l *Skiplist) Keys() []int {
 		curr = curr.levels[0]
 	}
 	return res
+}
+
+func (l *Skiplist) Length() int {
+	return l.length
 }
