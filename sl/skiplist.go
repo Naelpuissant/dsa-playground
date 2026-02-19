@@ -12,12 +12,12 @@ var (
 
 type Node struct {
 	Key    int
-	Value  int
+	Value  any
 	height int
 	levels []*Node
 }
 
-func NewNode(Key, Value, height int) *Node {
+func NewNode(Key int, Value any, height int) *Node {
 	return &Node{
 		Key:    Key,
 		Value:  Value,
@@ -57,7 +57,7 @@ func (l *Skiplist) rHeight() int {
 	return h
 }
 
-func (l *Skiplist) Insert(key, value int) {
+func (l *Skiplist) Insert(key int, value any) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
