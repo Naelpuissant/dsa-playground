@@ -2,11 +2,10 @@ package sl
 
 import (
 	"math/rand/v2"
+	"sync"
 )
 
 var (
-	// 	maxHeight = 48
-	// 	pValue    = 1 / math.E // Saw that somewhere, might be a good choice
 	maxHeight = 32
 	pValue    = 0.5
 )
@@ -31,7 +30,8 @@ type Skiplist struct {
 	head   *Node
 	level  int // current highest level
 	length int
-
+	rand   *rand.Rand
+	mu     *sync.RWMutex
 	update []*Node // Store and reuse update node links
 }
 
@@ -39,22 +39,28 @@ func NewSkiplist() *Skiplist {
 	// head node with max height
 	head := NewNode(-1, 0, maxHeight+1)
 	update := make([]*Node, maxHeight+1)
+	randSrc := rand.NewChaCha8([32]byte{byte(42)})
 	return &Skiplist{
 		head:   head,
 		level:  0,
+		rand:   rand.New(randSrc),
+		mu:     &sync.RWMutex{},
 		update: update,
 	}
 }
 
 func (l *Skiplist) rHeight() int {
 	h := 0
-	for h < maxHeight && (rand.Float64() < pValue) {
+	for h < maxHeight && (l.rand.Float64() < pValue) {
 		h++
 	}
 	return h
 }
 
 func (l *Skiplist) Insert(key, value int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	// reach insert point
 	curr := l.head
 
@@ -94,6 +100,9 @@ func (l *Skiplist) Insert(key, value int) {
 }
 
 func (l *Skiplist) Search(key int) *Node {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
 	curr := l.head
 	for i := l.level; i >= 0; i-- {
 		for curr.levels[i] != nil && curr.levels[i].Key < key {
@@ -110,6 +119,9 @@ func (l *Skiplist) Search(key int) *Node {
 }
 
 func (l *Skiplist) Keys() []int {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
 	res := []int{}
 	// Start after head
 	curr := l.head.levels[0]
@@ -121,5 +133,7 @@ func (l *Skiplist) Keys() []int {
 }
 
 func (l *Skiplist) Length() int {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
 	return l.length
 }

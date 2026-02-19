@@ -4,6 +4,7 @@ import (
 	"ds/sl"
 	"math/rand"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/huandu/skiplist"
@@ -46,6 +47,29 @@ func TestSkiplist(t *testing.T) {
 	node = list.Search(3)
 	if node == nil || node.Value != 1337 {
 		t.Errorf("Expected to find key 3 with value 1337, but got %v", node)
+	}
+}
+
+func TestSkiplistInsertConcurrency(t *testing.T) {
+	list := sl.NewSkiplist()
+
+	wg := sync.WaitGroup{}
+	wg.Add(1000)
+	// Concurrent inserts
+	for i := range 1000 {
+		go func(i int) {
+			list.Insert(i, i)
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+
+	// Verify all keys are present
+	for i := range 1000 {
+		node := list.Search(i)
+		if node == nil || node.Value != i {
+			t.Errorf("Expected to find key %d with value %d, but got %v", i, i, node)
+		}
 	}
 }
 

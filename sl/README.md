@@ -1,14 +1,15 @@
 # SkipList
 
-Basicaly a skiplist with "shortcuts" called "levels". 
+Basicaly an ordered linked list with "shortcuts" called "levels". 
 If height of each nodes is 0, it's an oredered linked list.
+Thread-safe, mutex locking.
 
 ## Bench
 
 For a personnal project I used [huandu/skiplist](github.com/huandu/skiplist),
 I want to bench my insert/search compared this implementation (simple, no arena).
 ```bash
-go test -benchtime=10000000x -bench=. ./sl -cpuprofile=./profile.out
+go test -benchtime=5s -bench=. ./sl
 ```
 
 current bench results
@@ -17,16 +18,15 @@ goos: linux
 goarch: amd64
 pkg: ds/sl
 cpu: Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz
-BenchmarkSkiplistInsert-8               10000000                85.86 ns/op
-BenchmarkHuanduSkiplistInsert-8         10000000               117.7 ns/op
-BenchmarkSkiplistSearch-8               10000000                86.60 ns/op
-BenchmarkHuanduSkiplistSearch-8         10000000               297.8 ns/op
+BenchmarkSkiplistInsert-8               19274250               335.0 ns/op
+BenchmarkHuanduSkiplistInsert-8         14218832               528.8 ns/op
+BenchmarkSkiplistSearch-8               25595133               226.9 ns/op
+BenchmarkHuanduSkiplistSearch-8         16565250               368.3 ns/op
 PASS
-ok      ds/sl   6.051s
+ok      ds/sl   27.591s
 ```
-Search results looks kinda sus, how huandu's sl be so slow ?
-
+Looks like my thread safe implementation beats what I previously used, yahou!
 
 ## TODO
-* Allow concurrency
-* Optimize random height
+* [X] Allow concurrency
+* [X] Optimize random height
