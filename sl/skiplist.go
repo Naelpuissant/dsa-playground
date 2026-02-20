@@ -57,6 +57,7 @@ func (l *Skiplist) rHeight() int {
 	return h
 }
 
+// Insert adds a key-value pair to the skiplist. If the key already exists, it updates the value (O(log(n)))
 func (l *Skiplist) Insert(key int, value any) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -99,6 +100,7 @@ func (l *Skiplist) Insert(key int, value any) {
 	}
 }
 
+// Search returns the node with the given key, or nil if not found (O(log(n)))
 func (l *Skiplist) Search(key int) *Node {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
@@ -118,6 +120,7 @@ func (l *Skiplist) Search(key int) *Node {
 	return nil
 }
 
+// returns all keys in the skiplist in sorted order (O(n))
 func (l *Skiplist) Keys() []int {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
@@ -133,7 +136,5 @@ func (l *Skiplist) Keys() []int {
 }
 
 func (l *Skiplist) Length() int {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
 	return l.length
 }
