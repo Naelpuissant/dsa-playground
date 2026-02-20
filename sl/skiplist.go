@@ -3,6 +3,7 @@ package sl
 import (
 	"math/rand/v2"
 	"sync"
+	"sync/atomic"
 )
 
 var (
@@ -29,7 +30,7 @@ func NewNode(Key int, Value any, height int) *Node {
 type Skiplist struct {
 	head   *Node
 	level  int // current highest level
-	length int
+	length atomic.Int64
 	rand   *rand.Rand
 	mu     *sync.RWMutex
 	update []*Node // Store and reuse update node links
@@ -57,12 +58,12 @@ func (l *Skiplist) rHeight() int {
 	return h
 }
 
-// Insert adds a key-value pair to the skiplist. If the key already exists, it updates the value (O(log(n)))
+// Insert adds a key-value pair to the skiplist.
+// If the key already exists, it updates the value (O(log(n)))
 func (l *Skiplist) Insert(key int, value any) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	// reach insert point
 	curr := l.head
 
 	for i := maxHeight; i >= 0; i-- {
@@ -73,7 +74,6 @@ func (l *Skiplist) Insert(key int, value any) {
 	}
 	curr = curr.levels[0]
 
-	// if key exists, update value
 	if curr != nil && curr.Key == key {
 		curr.Value = value
 		return
@@ -82,7 +82,6 @@ func (l *Skiplist) Insert(key int, value any) {
 	if curr == nil || curr.Key != key {
 		rHeight := l.rHeight()
 
-		// update current level
 		if rHeight > l.level {
 			for i := l.level + 1; i <= rHeight; i++ {
 				l.update[i] = l.head
@@ -90,13 +89,12 @@ func (l *Skiplist) Insert(key int, value any) {
 			l.level = rHeight
 		}
 
-		// insert new node and update levels
 		newNode := NewNode(key, value, rHeight)
 		for i := range rHeight + 1 {
 			newNode.levels[i] = l.update[i].levels[i]
 			l.update[i].levels[i] = newNode
 		}
-		l.length++
+		l.length.Add(1)
 	}
 }
 
@@ -126,7 +124,6 @@ func (l *Skiplist) Keys() []int {
 	defer l.mu.RUnlock()
 
 	res := []int{}
-	// Start after head
 	curr := l.head.levels[0]
 	for curr != nil {
 		res = append(res, curr.Key)
@@ -135,6 +132,6 @@ func (l *Skiplist) Keys() []int {
 	return res
 }
 
-func (l *Skiplist) Length() int {
-	return l.length
+func (l *Skiplist) Length() int64 {
+	return l.length.Load()
 }
