@@ -1,35 +1,81 @@
 package bm
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-func Uint32ToStr(i uint32) string {
-	return fmt.Sprintf("%032b", i)
+func Uint64ToStr(i uint64) string {
+	return fmt.Sprintf("%064b", i)
 }
 
 var (
-	ErrBitMapIndexTooBig = fmt.Errorf("Value is too big, max value should be 31")
+	ErrBitMapIndexTooBig = fmt.Errorf("Value is too big, max value should be 63")
+	ErrWrongBitMapSize   = fmt.Errorf("BitMap size should be a multiple of 64")
 )
 
 type BitMap struct {
-	m uint32 // 32 byte long bitmap
+	m []uint64
 }
 
-func NewBitMap() *BitMap {
-	return &BitMap{m: 0}
+func NewBitMap(size int) (*BitMap, error) {
+	if size%64 != 0 {
+		return nil, ErrWrongBitMapSize
+	}
+	blocs := size / 64
+	return &BitMap{m: make([]uint64, blocs)}, nil
 }
 
-func (bm *BitMap) Set(i uint32) error {
-	if i >= 32 {
-		return ErrBitMapIndexTooBig
+func (bm *BitMap) getBlocForIndex(i int) (int, error) {
+	if i >= len(bm.m)*64 {
+		return -1, ErrBitMapIndexTooBig
 	}
 
-	bm.m |= 1 << i
+	bloc := i >> 6 // floor division by 64
+	return bloc, nil
+}
+
+func (bm *BitMap) Set(i int) error {
+	bloc, err := bm.getBlocForIndex(i)
+	if err != nil {
+		return err
+	}
+
+	shift := i % 64
+	bm.m[len(bm.m)-1-bloc] |= 1 << shift
 
 	return nil
 }
 
-func (bm *BitMap) UnSet(i uint32) error {
-	if i >= 32 {
+func (bm *BitMap) Toggle(i int) error {
+	bloc, err := bm.getBlocForIndex(i)
+	if err != nil {
+		return err
+	}
+
+	shift := i % 64
+	bm.m[len(bm.m)-1-bloc] ^= 1 << shift
+
+	return nil
+}
+
+func (bm *BitMap) IsSet(i int) bool {
+	bloc, err := bm.getBlocForIndex(i)
+	if err != nil {
+		return false
+	}
+
+	shift := i % 64
+	tmp := bm.m[len(bm.m)-1-bloc] | 1<<shift
+
+	if tmp != bm.m[len(bm.m)-1-bloc] {
+		return false
+	}
+	return true
+}
+
+func (bm *BitMap) UnSet(i int) error {
+	if i >= len(bm.m)*64 {
 		return ErrBitMapIndexTooBig
 	}
 
@@ -40,29 +86,14 @@ func (bm *BitMap) UnSet(i uint32) error {
 	return nil
 }
 
-func (bm *BitMap) Toggle(i uint32) error {
-	if i >= 32 {
-		return ErrBitMapIndexTooBig
+func (bm *BitMap) String() string {
+	var str strings.Builder
+	for _, bloc := range bm.m {
+		str.WriteString(Uint64ToStr(bloc))
 	}
-
-	bm.m ^= 1 << i
-
-	return nil
+	return str.String()
 }
 
-func (bm *BitMap) IsSet(i uint32) bool {
-	if i >= 32 {
-		return false
-	}
-
-	tmp := bm.m | (uint32(1) << i)
-
-	if tmp != bm.m {
-		return false
-	}
-	return true
-}
-
-func (bm *BitMap) Str() string {
-	return Uint32ToStr(bm.m)
+func (bm *BitMap) Size() int {
+	return len(bm.m) * 64
 }

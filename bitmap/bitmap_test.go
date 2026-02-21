@@ -6,18 +6,30 @@ import (
 )
 
 func TestBitMap(t *testing.T) {
-	bitmap := bm.NewBitMap()
+	bitmap, _ := bm.NewBitMap(256)
 	bitmap.Set(7)
 
-	bmStr := bitmap.Str()
-	c := bmStr[31-7] // stored right to left
+	_, err := bm.NewBitMap(255)
+	if err != bm.ErrWrongBitMapSize {
+		t.Fatalf("Expected error when creating BitMap of size 255, got %v", err)
+	}
+
+	bmStr := bitmap.String()
+	c := bmStr[255-7] // stored right to left
 	if c != '1' {
 		t.Fatalf("BitMap[7] should be 1, got %b", c)
 	}
 
+	bitmap.Set(120)
+	bmStr = bitmap.String()
+	c = bmStr[255-120] // stored right to left
+	if c != '1' {
+		t.Fatalf("BitMap[120] should be 1, got %b", c)
+	}
+
 	bitmap.Set(7)
-	if bitmap.Str() != bmStr {
-		t.Fatalf("BitMap should be unchanged after setting same bit, got %s", bitmap.Str())
+	if bitmap.String() != bmStr {
+		t.Fatalf("BitMap should be unchanged after setting same bit, got %s", bitmap.String())
 	}
 
 	if !bitmap.IsSet(7) {
@@ -29,9 +41,9 @@ func TestBitMap(t *testing.T) {
 		t.Fatalf("BitMap[0] should be set")
 	}
 
-	bitmap.Set(31)
-	if !bitmap.IsSet(31) {
-		t.Fatalf("BitMap[31] should be set")
+	bitmap.Set(255)
+	if !bitmap.IsSet(255) {
+		t.Fatalf("BitMap[255] should be set")
 	}
 
 	bitmap.Toggle(7)
@@ -48,17 +60,17 @@ func TestBitMap(t *testing.T) {
 		t.Fatalf("BitMap[7] should be unset")
 	}
 
-	err := bitmap.Set(32)
+	err = bitmap.Set(256)
 	if err != bm.ErrBitMapIndexTooBig {
 		t.Fatalf("Expected error when setting bit index 32, got %v", err)
 	}
 
-	err = bitmap.UnSet(32)
+	err = bitmap.UnSet(256)
 	if err != bm.ErrBitMapIndexTooBig {
 		t.Fatalf("Expected error when unsetting bit index 32, got %v", err)
 	}
 
-	err = bitmap.Toggle(32)
+	err = bitmap.Toggle(256)
 	if err != bm.ErrBitMapIndexTooBig {
 		t.Fatalf("Expected error when toggling bit index 32, got %v", err)
 	}
