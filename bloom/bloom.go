@@ -1,4 +1,4 @@
-package bloom
+package bf
 
 import (
 	bm "ds/bitmap"

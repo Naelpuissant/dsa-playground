@@ -1,14 +1,14 @@
-package bloom_test
+package bf_test
 
 import (
 	"crypto/sha1"
-	"ds/bloom"
+	bf "ds/bloom"
 	"hash"
 	"testing"
 )
 
 func TestBloomFilter(t *testing.T) {
-	bf := bloom.NewBloomFilter(0.01, 4, func() hash.Hash {
+	bf := bf.NewBloomFilter(0.01, 4, func() hash.Hash {
 		return sha1.New()
 	})
 

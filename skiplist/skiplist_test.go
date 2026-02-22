@@ -1,7 +1,7 @@
 package sl_test
 
 import (
-	"ds/sl"
+	sl "ds/skiplist"
 	"math/rand"
 	"reflect"
 	"sync"
