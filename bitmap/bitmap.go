@@ -1,8 +1,10 @@
 package bm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+	"sync/atomic"
 )
 
 func Uint64ToStr(i uint64) string {
@@ -10,12 +12,12 @@ func Uint64ToStr(i uint64) string {
 }
 
 var (
-	ErrBitMapIndexTooBig = fmt.Errorf("Value is too big, max value should be 63")
-	ErrWrongBitMapSize   = fmt.Errorf("BitMap size should be a multiple of 64")
+	ErrBitMapWrongIndex = errors.New("Wrong index")
+	ErrWrongBitMapSize  = errors.New("BitMap size should be a multiple of 64")
 )
 
 type BitMap struct {
-	m []uint64
+	m []atomic.Uint64
 }
 
 func NewBitMap(size int) (*BitMap, error) {
@@ -23,77 +25,53 @@ func NewBitMap(size int) (*BitMap, error) {
 		return nil, ErrWrongBitMapSize
 	}
 	blocs := size / 64
-	return &BitMap{m: make([]uint64, blocs)}, nil
+	return &BitMap{m: make([]atomic.Uint64, blocs)}, nil
 }
 
-func (bm *BitMap) getBlocForIndex(i int) (int, error) {
-	if i >= len(bm.m)*64 {
-		return -1, ErrBitMapIndexTooBig
+func (b *BitMap) getBlocForIndex(i int) (int, error) {
+	if i >= len(b.m)*64 || i < 0 {
+		return -1, fmt.Errorf("%w: map size %d, got %d", ErrBitMapWrongIndex, b.Size()-1, i)
 	}
 
 	bloc := i >> 6 // floor division by 64
 	return bloc, nil
 }
 
-func (bm *BitMap) Set(i int) error {
-	bloc, err := bm.getBlocForIndex(i)
+func (b *BitMap) Set(i int) error {
+	blocIdx, err := b.getBlocForIndex(i)
 	if err != nil {
 		return err
 	}
 
 	shift := i % 64
-	bm.m[len(bm.m)-1-bloc] |= 1 << shift
+	b.m[blocIdx].Or(uint64(1 << shift))
 
 	return nil
 }
 
-func (bm *BitMap) Toggle(i int) error {
-	bloc, err := bm.getBlocForIndex(i)
-	if err != nil {
-		return err
-	}
-
-	shift := i % 64
-	bm.m[len(bm.m)-1-bloc] ^= 1 << shift
-
-	return nil
-}
-
-func (bm *BitMap) IsSet(i int) bool {
-	bloc, err := bm.getBlocForIndex(i)
+func (b *BitMap) IsSet(i int) bool {
+	blocIdx, err := b.getBlocForIndex(i)
 	if err != nil {
 		return false
 	}
 
 	shift := i % 64
-	tmp := bm.m[len(bm.m)-1-bloc] | 1<<shift
+	bloc := b.m[blocIdx].Load()
 
-	if tmp != bm.m[len(bm.m)-1-bloc] {
+	if bloc&(uint64(1)<<shift) == 0 {
 		return false
 	}
 	return true
 }
 
-func (bm *BitMap) UnSet(i int) error {
-	if i >= len(bm.m)*64 {
-		return ErrBitMapIndexTooBig
-	}
-
-	if bm.IsSet(i) {
-		return bm.Toggle(i)
-	}
-
-	return nil
-}
-
-func (bm *BitMap) String() string {
+func (b *BitMap) String() string {
 	var str strings.Builder
-	for _, bloc := range bm.m {
-		str.WriteString(Uint64ToStr(bloc))
+	for i := len(b.m) - 1; i >= 0; i-- {
+		str.WriteString(Uint64ToStr(b.m[i].Load()))
 	}
 	return str.String()
 }
 
-func (bm *BitMap) Size() int {
-	return len(bm.m) * 64
+func (b *BitMap) Size() int {
+	return len(b.m) * 64
 }

@@ -2,6 +2,7 @@ package bm_test
 
 import (
 	bm "ds/bitmap"
+	"errors"
 	"testing"
 )
 
@@ -15,14 +16,14 @@ func TestBitMap(t *testing.T) {
 	}
 
 	bmStr := bitmap.String()
-	c := bmStr[255-7] // stored right to left
+	c := bmStr[255-7] // standard bit representation (right to left)
 	if c != '1' {
 		t.Fatalf("BitMap[7] should be 1, got %b", c)
 	}
 
 	bitmap.Set(120)
 	bmStr = bitmap.String()
-	c = bmStr[255-120] // stored right to left
+	c = bmStr[255-120]
 	if c != '1' {
 		t.Fatalf("BitMap[120] should be 1, got %b", c)
 	}
@@ -46,32 +47,8 @@ func TestBitMap(t *testing.T) {
 		t.Fatalf("BitMap[255] should be set")
 	}
 
-	bitmap.Toggle(7)
-	if bitmap.IsSet(7) {
-		t.Fatalf("BitMap[7] shouldn't be set")
-	}
-	bitmap.Toggle(7)
-	if !bitmap.IsSet(7) {
-		t.Fatalf("BitMap[7] should be set again")
-	}
-
-	bitmap.UnSet(7)
-	if bitmap.IsSet(7) {
-		t.Fatalf("BitMap[7] should be unset")
-	}
-
 	err = bitmap.Set(256)
-	if err != bm.ErrBitMapIndexTooBig {
-		t.Fatalf("Expected error when setting bit index 32, got %v", err)
-	}
-
-	err = bitmap.UnSet(256)
-	if err != bm.ErrBitMapIndexTooBig {
-		t.Fatalf("Expected error when unsetting bit index 32, got %v", err)
-	}
-
-	err = bitmap.Toggle(256)
-	if err != bm.ErrBitMapIndexTooBig {
-		t.Fatalf("Expected error when toggling bit index 32, got %v", err)
+	if !errors.Is(err, bm.ErrBitMapWrongIndex) {
+		t.Fatalf("Expected error when setting bit index 256, got \"%v\"", err)
 	}
 }
