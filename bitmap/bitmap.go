@@ -12,7 +12,7 @@ func Uint64ToStr(i uint64) string {
 }
 
 var (
-	ErrBitMapWrongIndex = errors.New("Wrong index")
+	ErrWrongBitMapIndex = errors.New("Wrong index")
 	ErrWrongBitMapSize  = errors.New("BitMap size should be a multiple of 64")
 )
 
@@ -30,7 +30,7 @@ func NewBitMap(size int) (*BitMap, error) {
 
 func (b *BitMap) getBlocForIndex(i int) (int, error) {
 	if i >= len(b.m)*64 || i < 0 {
-		return -1, fmt.Errorf("%w: map size %d, got %d", ErrBitMapWrongIndex, b.Size()-1, i)
+		return -1, fmt.Errorf("%w: map size %d, got %d", ErrWrongBitMapIndex, b.Size()-1, i)
 	}
 
 	bloc := i >> 6 // floor division by 64

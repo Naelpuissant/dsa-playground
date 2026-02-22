@@ -1,19 +1,16 @@
 package bloom
 
-// TODO :
-// * Handle concurrency
-
 import (
 	bm "ds/bitmap"
 	"encoding/binary"
-	"fmt"
+	"errors"
 	"hash"
 	"math"
 )
 
 var (
-	ErrBadFalsePositive = fmt.Errorf("falsePositive should be between 0 and 1")
-	ErrBadNItems        = fmt.Errorf("nItems should be greater than one")
+	ErrWrongFalsePositive = errors.New("falsePositive should be between 0 and 1")
+	ErrWrongNItems        = errors.New("nItems should be greater than one")
 )
 
 type BloomFilter struct {
@@ -40,11 +37,11 @@ func getNHashes(nbits float64, nItems float64) int {
 
 func NewBloomFilter(hash hash.Hash, falsePositive float64, nItems int) *BloomFilter {
 	if falsePositive <= 0 || falsePositive >= 1 {
-		panic(ErrBadFalsePositive)
+		panic(ErrWrongFalsePositive)
 	}
 
 	if nItems <= 1 {
-		panic(ErrBadNItems)
+		panic(ErrWrongNItems)
 	}
 
 	nbits := getNBits(falsePositive, float64(nItems))

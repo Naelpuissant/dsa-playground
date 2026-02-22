@@ -48,7 +48,7 @@ func TestBitMap(t *testing.T) {
 	}
 
 	err = bitmap.Set(256)
-	if !errors.Is(err, bm.ErrBitMapWrongIndex) {
+	if !errors.Is(err, bm.ErrWrongBitMapIndex) {
 		t.Fatalf("Expected error when setting bit index 256, got \"%v\"", err)
 	}
 }
