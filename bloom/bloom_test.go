@@ -3,11 +3,15 @@ package bloom_test
 import (
 	"crypto/sha1"
 	"ds/bloom"
+	"hash"
 	"testing"
 )
 
 func TestBloomFilter(t *testing.T) {
-	bf := bloom.NewBloomFilter(sha1.New(), 0.01, 4)
+	bf := bloom.NewBloomFilter(0.01, 4, func() hash.Hash {
+		return sha1.New()
+	})
+
 	keys := []string{"hello", "world", "foo", "bar"}
 	for _, key := range keys {
 		bf.Add([]byte(key))
@@ -19,3 +23,5 @@ func TestBloomFilter(t *testing.T) {
 		}
 	}
 }
+
+// TODO : add a concurrency test

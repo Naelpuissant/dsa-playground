@@ -52,3 +52,5 @@ func TestBitMap(t *testing.T) {
 		t.Fatalf("Expected error when setting bit index 256, got \"%v\"", err)
 	}
 }
+
+// TODO : add a concurrency test

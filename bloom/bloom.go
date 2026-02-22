@@ -17,7 +17,7 @@ type BloomFilter struct {
 	bitmap    *bm.BitMap
 	nbits     int
 	nhashes   int
-	hash      hash.Hash
+	newHash   func() hash.Hash
 	digestBuf [16]byte
 }
 
@@ -35,7 +35,9 @@ func getNHashes(nbits float64, nItems float64) int {
 	return int(math.Ceil(nhashes))
 }
 
-func NewBloomFilter(hash hash.Hash, falsePositive float64, nItems int) *BloomFilter {
+// Create a new BloomFilter newHash should return your hash function,
+// please use a fast, non-cryptographic one
+func NewBloomFilter(falsePositive float64, nItems int, newHash func() hash.Hash) *BloomFilter {
 	if falsePositive <= 0 || falsePositive >= 1 {
 		panic(ErrWrongFalsePositive)
 	}
@@ -53,18 +55,19 @@ func NewBloomFilter(hash hash.Hash, falsePositive float64, nItems int) *BloomFil
 	}
 
 	return &BloomFilter{
-		bitmap:    bitmap,
-		nbits:     nbits,
-		nhashes:   int(nhashes),
-		hash:      hash,
-		digestBuf: [16]byte{},
+		bitmap:  bitmap,
+		nbits:   nbits,
+		nhashes: int(nhashes),
+		newHash: newHash,
 	}
 }
 
 func (bf *BloomFilter) Add(key []byte) {
-	bf.hash.Reset()
-	bf.hash.Write(key)
-	digest := bf.hash.Sum(bf.digestBuf[:])
+	hash := bf.newHash()
+	digestBuf := [16]byte{}
+
+	hash.Write(key)
+	digest := hash.Sum(digestBuf[:])
 
 	h1 := binary.BigEndian.Uint64(digest[:8])
 	h2 := binary.BigEndian.Uint64(digest[8:16])
@@ -78,9 +81,11 @@ func (bf *BloomFilter) Add(key []byte) {
 }
 
 func (bf *BloomFilter) Contains(key []byte) bool {
-	bf.hash.Reset()
-	bf.hash.Write(key)
-	digest := bf.hash.Sum(bf.digestBuf[:])
+	hash := bf.newHash()
+	digestBuf := [16]byte{}
+
+	hash.Write(key)
+	digest := hash.Sum(digestBuf[:])
 
 	h1 := binary.BigEndian.Uint64(digest[:8])
 	h2 := binary.BigEndian.Uint64(digest[8:16])
