@@ -47,5 +47,5 @@ ok      ds/skiplist     27.097s
 
 # TODO
 - [X] Get first and get last 0(1) 
-- [ ] Range search
+- [X] Range search
 - [ ] Insert option (Replace or append)

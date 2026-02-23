@@ -2,6 +2,7 @@ package skiplist
 
 import (
 	"bytes"
+	"errors"
 	"math/rand/v2"
 	"sync"
 	"sync/atomic"
@@ -10,6 +11,8 @@ import (
 var (
 	maxHeight = 32
 	pValue    = 0.5
+
+	ErrNilKey = errors.New("Nil key not allowed")
 )
 
 type Node struct {
@@ -66,12 +69,15 @@ func (l *Skiplist) rHeight() int {
 
 // Insert adds a key-value pair to the skiplist.
 // If the key already exists, it updates the value (O(log(n)))
-func (l *Skiplist) Insert(key, value []byte) {
+func (l *Skiplist) Insert(key, value []byte) error {
+	if key == nil {
+		return ErrNilKey
+	}
+
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	curr := l.head
-
 	for i := maxHeight; i >= 0; i-- {
 		for curr.levels[i] != nil && bytes.Compare(curr.levels[i].Key, key) < 0 {
 			curr = curr.levels[i]
@@ -82,7 +88,7 @@ func (l *Skiplist) Insert(key, value []byte) {
 
 	if curr != nil && bytes.Equal(curr.Key, key) {
 		curr.Value = value
-		return
+		return nil
 	}
 
 	if curr == nil || !bytes.Equal(curr.Key, key) {
@@ -107,6 +113,7 @@ func (l *Skiplist) Insert(key, value []byte) {
 
 		l.length.Add(1)
 	}
+	return nil
 }
 
 // Search returns the node with the given key, or nil if not found (O(log(n)))
@@ -127,6 +134,49 @@ func (l *Skiplist) Search(key []byte) *Node {
 	}
 
 	return nil
+}
+
+func (l *Skiplist) Range(from []byte, to []byte) []*Node {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	if bytes.Compare(from, to) > 0 {
+		return nil
+	}
+
+	start := l.First()
+	if start == nil {
+		return nil
+	}
+
+	end := l.Last()
+	if bytes.Compare(end.Key, from) < 0 || bytes.Compare(start.Key, to) > 0 {
+		return nil
+	}
+
+	res := []*Node{}
+
+	// find starting point
+	curr := l.head
+	for i := l.level; i >= 0; i-- {
+		for curr.levels[i] != nil && bytes.Compare(curr.levels[i].Key, from) < 0 {
+			curr = curr.levels[i]
+		}
+	}
+	curr = curr.Next()
+
+	for ; curr != nil; curr = curr.Next() {
+		if bytes.Compare(curr.Key, from) < 0 {
+			continue
+		}
+
+		if bytes.Compare(curr.Key, to) > 0 {
+			break
+		}
+		res = append(res, curr)
+	}
+
+	return res
 }
 
 // returns all keys in the skiplist in sorted order (O(n))
