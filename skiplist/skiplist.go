@@ -1,6 +1,7 @@
 package skiplist
 
 import (
+	"bytes"
 	"math/rand/v2"
 	"sync"
 	"sync/atomic"
@@ -12,13 +13,13 @@ var (
 )
 
 type Node struct {
-	Key    int
-	Value  any
+	Key    []byte
+	Value  []byte
 	height int
 	levels []*Node
 }
 
-func NewNode(Key int, Value any, height int) *Node {
+func NewNode(Key, Value []byte, height int) *Node {
 	return &Node{
 		Key:    Key,
 		Value:  Value,
@@ -38,7 +39,7 @@ type Skiplist struct {
 
 func New() *Skiplist {
 	// head node with max height
-	head := NewNode(-1, 0, maxHeight+1)
+	head := NewNode(nil, nil, maxHeight+1)
 	update := make([]*Node, maxHeight+1)
 	randSrc := rand.NewChaCha8([32]byte{byte(42)})
 	return &Skiplist{
@@ -60,26 +61,26 @@ func (l *Skiplist) rHeight() int {
 
 // Insert adds a key-value pair to the skiplist.
 // If the key already exists, it updates the value (O(log(n)))
-func (l *Skiplist) Insert(key int, value any) {
+func (l *Skiplist) Insert(key, value []byte) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	curr := l.head
 
 	for i := maxHeight; i >= 0; i-- {
-		for curr.levels[i] != nil && curr.levels[i].Key < key {
+		for curr.levels[i] != nil && bytes.Compare(curr.levels[i].Key, key) < 0 {
 			curr = curr.levels[i]
 		}
 		l.update[i] = curr
 	}
 	curr = curr.levels[0]
 
-	if curr != nil && curr.Key == key {
+	if curr != nil && bytes.Equal(curr.Key, key) {
 		curr.Value = value
 		return
 	}
 
-	if curr == nil || curr.Key != key {
+	if curr == nil || !bytes.Equal(curr.Key, key) {
 		rHeight := l.rHeight()
 
 		if rHeight > l.level {
@@ -99,19 +100,19 @@ func (l *Skiplist) Insert(key int, value any) {
 }
 
 // Search returns the node with the given key, or nil if not found (O(log(n)))
-func (l *Skiplist) Search(key int) *Node {
+func (l *Skiplist) Search(key []byte) *Node {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
 	curr := l.head
 	for i := l.level; i >= 0; i-- {
-		for curr.levels[i] != nil && curr.levels[i].Key < key {
+		for curr.levels[i] != nil && bytes.Compare(curr.levels[i].Key, key) < 0 {
 			curr = curr.levels[i]
 		}
 	}
 	curr = curr.levels[0]
 
-	if curr != nil && curr.Key == key {
+	if curr != nil && bytes.Equal(curr.Key, key) {
 		return curr
 	}
 
@@ -119,11 +120,11 @@ func (l *Skiplist) Search(key int) *Node {
 }
 
 // returns all keys in the skiplist in sorted order (O(n))
-func (l *Skiplist) Keys() []int {
+func (l *Skiplist) Keys() [][]byte {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
-	res := []int{}
+	res := [][]byte{}
 	curr := l.head.levels[0]
 	for curr != nil {
 		res = append(res, curr.Key)

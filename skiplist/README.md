@@ -11,7 +11,7 @@ Thread-safe, mutex locking.
 For a personnal project I used [huandu/skiplist](github.com/huandu/skiplist),
 I want to bench my insert/search compared this implementation (simple, no arena).
 ```bash
-go test -benchtime=5s -bench=. ./sl
+go test -benchtime=5s -bench=. ./skiplist
 ```
 
 current bench results
@@ -29,6 +29,18 @@ ok      ds/sl   27.591s
 ```
 Looks like my thread safe implementation beats what I previously used, yahou!
 
-## TODO
-* [X] Allow concurrency
-* [X] Optimize random height
+
+Since I switched to byte array key instead of int, insert has been impacted. 
+But I'm ok with this for now with my simple skiplist.
+```
+goos: linux
+goarch: amd64
+pkg: ds/skiplist
+cpu: Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz
+BenchmarkSkiplistInsert-8               11710203               561.3 ns/op
+BenchmarkHuanduSkiplistInsert-8         14174908               501.1 ns/op
+BenchmarkSkiplistSearch-8               12027432               441.6 ns/op
+BenchmarkHuanduSkiplistSearch-8          8642624               646.7 ns/op
+PASS
+ok      ds/skiplist     27.097s
+```

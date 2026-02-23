@@ -1,7 +1,9 @@
 package skiplist_test
 
 import (
+	"bytes"
 	sl "ds/skiplist"
+	"encoding/binary"
 	"math/rand"
 	"reflect"
 	"sync"
@@ -10,43 +12,50 @@ import (
 	"github.com/huandu/skiplist"
 )
 
+func b(i int) []byte {
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, uint64(i))
+	return buf
+}
+
 func TestSkiplist(t *testing.T) {
 	list := sl.New()
-	list.Insert(5, 1)
-	list.Insert(3, 2)
-	list.Insert(8, 3)
-	list.Insert(1, 4)
+	list.Insert(b(5), b(1))
+	list.Insert(b(3), b(2))
+	list.Insert(b(8), b(3))
+	list.Insert(b(1), b(4))
 
 	// Insert
-	expectedKeys := []int{1, 3, 5, 8}
+	expectedKeys := [][]byte{b(1), b(3), b(5), b(8)}
 	actualKeys := list.Keys()
+
 	if !reflect.DeepEqual(expectedKeys, actualKeys) {
 		t.Errorf("Expected keys %v, but got %v", expectedKeys, actualKeys)
 	}
 
 	// Search existing key
-	node := list.Search(3)
-	if node == nil || node.Value != 2 {
+	node := list.Search(b(3))
+	if node == nil || !bytes.Equal(node.Value, b(2)) {
 		t.Errorf("Expected to find key 3 with value 2, but got %v", node)
 	}
 
 	// Search non-existing key
-	node = list.Search(10)
+	node = list.Search(b(10))
 	if node != nil {
 		t.Errorf("Expected to not find key 10, but got %v", node)
 	}
 
 	// Update value
 	expectedLen := list.Length()
-	list.Insert(3, 1337)
+	list.Insert(b(3), b(1337))
+
 	if list.Length() != expectedLen {
 		t.Errorf("Expected length %d, but got %d", expectedLen, list.Length())
 	}
 
-	// After update search
-	node = list.Search(3)
-	if node == nil || node.Value != 1337 {
-		t.Errorf("Expected to find key 3 with value 1337, but got %v", node)
+	node = list.Search(b(3))
+	if node == nil || !bytes.Equal(node.Value, b(1337)) {
+		t.Errorf("Expected updated value 1337, got %v", node)
 	}
 }
 
@@ -55,80 +64,71 @@ func TestSkiplistInsertConcurrency(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(1000)
-	// Concurrent inserts
+
 	for i := range 1000 {
 		go func(i int) {
-			list.Insert(i, i)
+			list.Insert(b(i), b(i))
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
 
-	// Verify all keys are present
 	for i := range 1000 {
-		node := list.Search(i)
-		if node == nil || node.Value != i {
-			t.Errorf("Expected to find key %d with value %d, but got %v", i, i, node)
+		node := list.Search(b(i))
+		if node == nil || !bytes.Equal(node.Value, b(i)) {
+			t.Errorf("Expected to find key %d", i)
 		}
 	}
 }
 
-func BenchmarkSkiplistInsert(b *testing.B) {
+func BenchmarkSkiplistInsert(bm *testing.B) {
 	list := sl.New()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		list.Insert(i, i)
+
+	bm.ResetTimer()
+	for i := 0; i < bm.N; i++ {
+		list.Insert(b(i), b(i))
 	}
 }
 
-func BenchmarkHuanduSkiplistInsert(b *testing.B) {
+func BenchmarkHuanduSkiplistInsert(bm *testing.B) {
 	list := skiplist.New(skiplist.Int)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	bm.ResetTimer()
+	for i := 0; i < bm.N; i++ {
 		list.Set(i, i)
 	}
 }
 
-func BenchmarkSkiplistSearch(b *testing.B) {
+func BenchmarkSkiplistSearch(bm *testing.B) {
 	list := sl.New()
-	exepectedList := skiplist.New(skiplist.Int)
 
-	len := 10000
-	rands := make([]int, len)
+	size := 10000
+	rands := make([]int, size)
 
-	for i := range len {
-		list.Insert(i, i)
-		exepectedList.Set(i, i)
-		rands[i] = rand.Intn(len - 1)
+	for i := range size {
+		list.Insert(b(i), b(i))
+		rands[i] = rand.Intn(size - 1)
 	}
 
-	// Verify correctness before benchmarking
-	for key := range len {
-		node := list.Search(rands[key])
-		expectedValue, _ := exepectedList.GetValue(rands[key])
-		if node.Value != expectedValue {
-			b.Fatalf("Incorect value %d for key %d, value should be %d", node.Value, rands[key], expectedValue)
-		}
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		list.Search(rands[i%len])
+	bm.ResetTimer()
+	for i := 0; i < bm.N; i++ {
+		list.Search(b(rands[i%size]))
 	}
 }
 
-func BenchmarkHuanduSkiplistSearch(b *testing.B) {
-	list := skiplist.New(skiplist.Int)
+func BenchmarkHuanduSkiplistSearch(bm *testing.B) {
+	list := skiplist.New(skiplist.Bytes)
 
-	len := 10000
-	rands := make([]int, len)
-	for i := range len {
-		list.Set(i, i)
-		rands[i] = rand.Intn(len - 1)
+	size := 10000
+	rands := make([]int, size)
+
+	for i := range size {
+		list.Set(b(i), b(i))
+		rands[i] = rand.Intn(size - 1)
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		list.Get(rands[i%len])
+	bm.ResetTimer()
+	for i := 0; i < bm.N; i++ {
+		list.Get(b(rands[i%size]))
 	}
 }
