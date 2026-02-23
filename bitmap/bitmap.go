@@ -20,7 +20,7 @@ type BitMap struct {
 	m []atomic.Uint64
 }
 
-func NewBitMap(size int) (*BitMap, error) {
+func New(size int) (*BitMap, error) {
 	if size%64 != 0 {
 		return nil, ErrWrongBitMapSize
 	}

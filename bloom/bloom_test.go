@@ -8,7 +8,7 @@ import (
 )
 
 func TestBloomFilter(t *testing.T) {
-	bloom := bloom.NewBloomFilter(0.01, 4, func() hash.Hash {
+	bloom := bloom.New(0.01, 4, func() hash.Hash {
 		return sha1.New()
 	})
 

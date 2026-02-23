@@ -7,10 +7,10 @@ import (
 )
 
 func TestBitMap(t *testing.T) {
-	bm, _ := bitmap.NewBitMap(256)
+	bm, _ := bitmap.New(256)
 	bm.Set(7)
 
-	_, err := bitmap.NewBitMap(255)
+	_, err := bitmap.New(255)
 	if err != bitmap.ErrWrongBitMapSize {
 		t.Fatalf("Expected error when creating BitMap of size 255, got %v", err)
 	}

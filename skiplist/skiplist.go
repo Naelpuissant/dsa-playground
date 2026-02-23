@@ -36,7 +36,7 @@ type Skiplist struct {
 	update []*Node // Store and reuse update node links
 }
 
-func NewSkiplist() *Skiplist {
+func New() *Skiplist {
 	// head node with max height
 	head := NewNode(-1, 0, maxHeight+1)
 	update := make([]*Node, maxHeight+1)

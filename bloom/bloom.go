@@ -37,7 +37,7 @@ func getNHashes(nbits float64, nItems float64) int {
 
 // Create a new BloomFilter newHash should return your hash function,
 // please use a fast, non-cryptographic one
-func NewBloomFilter(falsePositive float64, nItems int, newHash func() hash.Hash) *BloomFilter {
+func New(falsePositive float64, nItems int, newHash func() hash.Hash) *BloomFilter {
 	if falsePositive <= 0 || falsePositive >= 1 {
 		panic(ErrWrongFalsePositive)
 	}
@@ -49,7 +49,7 @@ func NewBloomFilter(falsePositive float64, nItems int, newHash func() hash.Hash)
 	nbits := getNBits(falsePositive, float64(nItems))
 	nhashes := getNHashes(float64(nbits), float64(nItems))
 
-	bitmap, err := bitmap.NewBitMap(nbits)
+	bitmap, err := bitmap.New(nbits)
 	if err != nil {
 		panic(err)
 	}

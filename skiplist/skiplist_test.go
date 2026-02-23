@@ -11,7 +11,7 @@ import (
 )
 
 func TestSkiplist(t *testing.T) {
-	list := sl.NewSkiplist()
+	list := sl.New()
 	list.Insert(5, 1)
 	list.Insert(3, 2)
 	list.Insert(8, 3)
@@ -51,7 +51,7 @@ func TestSkiplist(t *testing.T) {
 }
 
 func TestSkiplistInsertConcurrency(t *testing.T) {
-	list := sl.NewSkiplist()
+	list := sl.New()
 
 	wg := sync.WaitGroup{}
 	wg.Add(1000)
@@ -74,7 +74,7 @@ func TestSkiplistInsertConcurrency(t *testing.T) {
 }
 
 func BenchmarkSkiplistInsert(b *testing.B) {
-	list := sl.NewSkiplist()
+	list := sl.New()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		list.Insert(i, i)
@@ -90,7 +90,7 @@ func BenchmarkHuanduSkiplistInsert(b *testing.B) {
 }
 
 func BenchmarkSkiplistSearch(b *testing.B) {
-	list := sl.NewSkiplist()
+	list := sl.New()
 	exepectedList := skiplist.New(skiplist.Int)
 
 	len := 10000
