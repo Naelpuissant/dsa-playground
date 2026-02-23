@@ -44,3 +44,8 @@ BenchmarkHuanduSkiplistSearch-8          8642624               646.7 ns/op
 PASS
 ok      ds/skiplist     27.097s
 ```
+
+# TODO
+- [X] Get first and get last 0(1) 
+- [ ] Range search
+- [ ] Insert option (Replace or append)

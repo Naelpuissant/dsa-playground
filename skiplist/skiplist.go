@@ -28,13 +28,18 @@ func NewNode(Key, Value []byte, height int) *Node {
 	}
 }
 
+func (n *Node) Next() *Node {
+	return n.levels[0]
+}
+
 type Skiplist struct {
 	head   *Node
-	level  int // current highest level
+	last   *Node
+	level  int     // current highest level
+	update []*Node // Store and reuse update node links
 	length atomic.Int64
 	rand   *rand.Rand
 	mu     *sync.RWMutex
-	update []*Node // Store and reuse update node links
 }
 
 func New() *Skiplist {
@@ -44,10 +49,10 @@ func New() *Skiplist {
 	randSrc := rand.NewChaCha8([32]byte{byte(42)})
 	return &Skiplist{
 		head:   head,
+		update: update,
 		level:  0,
 		rand:   rand.New(randSrc),
 		mu:     &sync.RWMutex{},
-		update: update,
 	}
 }
 
@@ -73,7 +78,7 @@ func (l *Skiplist) Insert(key, value []byte) {
 		}
 		l.update[i] = curr
 	}
-	curr = curr.levels[0]
+	curr = curr.Next()
 
 	if curr != nil && bytes.Equal(curr.Key, key) {
 		curr.Value = value
@@ -95,6 +100,11 @@ func (l *Skiplist) Insert(key, value []byte) {
 			newNode.levels[i] = l.update[i].levels[i]
 			l.update[i].levels[i] = newNode
 		}
+
+		if newNode.Next() == nil {
+			l.last = newNode
+		}
+
 		l.length.Add(1)
 	}
 }
@@ -110,7 +120,7 @@ func (l *Skiplist) Search(key []byte) *Node {
 			curr = curr.levels[i]
 		}
 	}
-	curr = curr.levels[0]
+	curr = curr.Next()
 
 	if curr != nil && bytes.Equal(curr.Key, key) {
 		return curr
@@ -125,12 +135,22 @@ func (l *Skiplist) Keys() [][]byte {
 	defer l.mu.RUnlock()
 
 	res := [][]byte{}
-	curr := l.head.levels[0]
+	curr := l.First()
 	for curr != nil {
 		res = append(res, curr.Key)
-		curr = curr.levels[0]
+		curr = curr.Next()
 	}
 	return res
+}
+
+// Get first element (O(1))
+func (l *Skiplist) First() *Node {
+	return l.head.Next()
+}
+
+// Get last element (O(1))
+func (l *Skiplist) Last() *Node {
+	return l.last
 }
 
 func (l *Skiplist) Length() int64 {

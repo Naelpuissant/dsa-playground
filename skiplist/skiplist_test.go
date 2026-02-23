@@ -57,6 +57,16 @@ func TestSkiplist(t *testing.T) {
 	if node == nil || !bytes.Equal(node.Value, b(1337)) {
 		t.Errorf("Expected updated value 1337, got %v", node)
 	}
+
+	first := list.First().Key
+	if first == nil || !bytes.Equal(first, b(1)) {
+		t.Errorf("First node key should be 1, got %d", first)
+	}
+
+	last := list.Last().Key
+	if last == nil || !bytes.Equal(last, b(8)) {
+		t.Errorf("Last node key should be 8, got %d", last)
+	}
 }
 
 func TestSkiplistInsertConcurrency(t *testing.T) {
