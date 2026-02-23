@@ -1,4 +1,4 @@
-package sl_test
+package skiplist_test
 
 import (
 	sl "ds/skiplist"

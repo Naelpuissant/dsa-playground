@@ -1,4 +1,4 @@
-package bm
+package bitmap
 
 import (
 	"errors"

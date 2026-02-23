@@ -1,4 +1,4 @@
-package sl
+package skiplist
 
 import (
 	"math/rand/v2"

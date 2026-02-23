@@ -1,7 +1,7 @@
-package bf
+package bloom
 
 import (
-	bm "ds/bitmap"
+	"ds/bitmap"
 	"encoding/binary"
 	"errors"
 	"hash"
@@ -14,7 +14,7 @@ var (
 )
 
 type BloomFilter struct {
-	bitmap    *bm.BitMap
+	bitmap    *bitmap.BitMap
 	nbits     int
 	nhashes   int
 	newHash   func() hash.Hash
@@ -49,7 +49,7 @@ func NewBloomFilter(falsePositive float64, nItems int, newHash func() hash.Hash)
 	nbits := getNBits(falsePositive, float64(nItems))
 	nhashes := getNHashes(float64(nbits), float64(nItems))
 
-	bitmap, err := bm.NewBitMap(nbits)
+	bitmap, err := bitmap.NewBitMap(nbits)
 	if err != nil {
 		panic(err)
 	}
