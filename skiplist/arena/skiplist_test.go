@@ -1,8 +1,8 @@
-package skiplist_test
+package arena_test
 
 import (
 	"bytes"
-	sl "ds/skiplist"
+	sl "ds/skiplist/arena"
 	"encoding/binary"
 	"math/rand"
 	"reflect"
