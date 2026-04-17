@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync/atomic"
 )
 
 func Uint64ToStr(i uint64) string {
@@ -17,7 +16,7 @@ var (
 )
 
 type BitMap struct {
-	m []atomic.Uint64
+	m []uint64
 }
 
 func New(size int) (*BitMap, error) {
@@ -25,7 +24,7 @@ func New(size int) (*BitMap, error) {
 		return nil, ErrWrongBitMapSize
 	}
 	blocs := size / 64
-	return &BitMap{m: make([]atomic.Uint64, blocs)}, nil
+	return &BitMap{m: make([]uint64, blocs)}, nil
 }
 
 func (b *BitMap) getBlocForIndex(i int) (int, error) {
@@ -44,7 +43,7 @@ func (b *BitMap) Set(i int) error {
 	}
 
 	shift := i % 64
-	b.m[blocIdx].Or(uint64(1 << shift))
+	b.m[blocIdx] |= uint64(1 << shift)
 
 	return nil
 }
@@ -56,7 +55,7 @@ func (b *BitMap) IsSet(i int) bool {
 	}
 
 	shift := i % 64
-	bloc := b.m[blocIdx].Load()
+	bloc := b.m[blocIdx]
 
 	if bloc&(uint64(1)<<shift) == 0 {
 		return false
@@ -67,7 +66,7 @@ func (b *BitMap) IsSet(i int) bool {
 func (b *BitMap) String() string {
 	var str strings.Builder
 	for i := len(b.m) - 1; i >= 0; i-- {
-		str.WriteString(Uint64ToStr(b.m[i].Load()))
+		str.WriteString(Uint64ToStr(b.m[i]))
 	}
 	return str.String()
 }
