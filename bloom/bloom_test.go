@@ -1,16 +1,12 @@
 package bloom_test
 
 import (
-	"crypto/sha1"
 	"ds/bloom"
-	"hash"
 	"testing"
 )
 
 func TestBloomFilter(t *testing.T) {
-	bloom := bloom.New(0.01, 4, func() hash.Hash {
-		return sha1.New()
-	})
+	bloom := bloom.New(0.01, 4)
 
 	keys := []string{"hello", "world", "foo", "bar"}
 	for _, key := range keys {
